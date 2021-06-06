@@ -1,0 +1,33 @@
+selenium模块的基本使用
+
+问题: selenium模块和爬虫之间具有怎样的关联?
+    - 便捷的获取网络中动态加载的数据
+    - 便捷实现模拟登陆
+什么是selenium模块?
+    - 基于浏览器自动化的一个模块。
+
+selenium使用流程:
+    -实例化一个浏览器对象
+    -编写基于浏览器自动化的操作代码
+        -发起请求: get(url)
+        -标签定位: find系列的方法
+        -标签交互: send_keys('xxx')
+        -执行js程序: excute_script('jsCode')
+        -前进，后退: back(),forward()
+        -关闭浏览器: quit()
+    -selenium处理iframe
+        -如果定位的标签存在于iframe标签中，则必须使用switch_to.frame(id)
+        -动作链(拖动): from selenium.webdriver import ActionChains
+            -实例化一个动作链对象:  action = ActionChains(bro)
+            -click_and_hold(div):长按且点击操作
+            -move_by_offset(x,y):拖动操作
+            -perform()表示让动作链立即执行
+            -action.release()释放动作链对象
+
+12306模拟登陆：
+    -使用selenium打开登陆页面
+    -对当前selenium打开的这张页面进行截图
+    -对当前图片局部区域(验证码图片)进行裁剪
+        -好处:将验证码图片和模拟登陆进行一一对应
+    -使用超级鹰识别识别验证码图片(坐标)
+    -

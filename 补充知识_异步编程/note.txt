@@ -239,3 +239,160 @@
             data = await fut 
             print(data)
         asyncio.run(main())
+        ...
+        - concurrent.futures.Future对象
+        使用线程池、进程池实现异步操作时用到的对象
+        ...
+        import time 
+        from concurrent.futures import Future 
+        from concurrent.futures.thread import ThreadPoolExecutor 
+        from concurrent.futures.process imoprt ProcessPoolExecutor 
+
+        def func(value):
+            time.sleep(1)
+            print(value)
+        #创建线程池
+        pool = ThreadPoolExecutor(max_workers=5)
+        #创建进程池
+        #或 pool = ProcessPoolExecutor(max_workers=5)
+
+        for in range(10):
+            fut = pool.submit(func,i)
+            print(fut)
+        ...
+
+        以后写代码可能会存在交叉使用。例如: crm项目 80%都是基于协程的异步编程 + MySQL(不支持)[线程、进程做异步编程]
+
+        ...
+        import time 
+        import asyncio
+        import concurrent.futures 
+
+        def func1():
+            #某个耗时操作
+            time.sleep(2)
+            return "SB"
+        async def main():
+            loop = asyncio.get_running_loop()
+
+            #1.Run in the default loop's executor (默认ThreadPoolExecutor)
+            #第一步: 内部会先调用 ThreadPoolExecutor的submit方法去线程池中申请一个线程去执行func1函数，并返回一个concurrent.futures.Future对象
+            #第二步: 调用asyncio.wrap_future将concurrent.futures.Future对象包装成asycio.Future对象
+            #因为concurrent.futures.Future对象不支持await语法，所以需要包装为asycio.Future对象才能使用
+            
+            fut = loop.run_in_executor(None,func1)
+            result = await fut 
+            print('default thread pool',result)
+
+            #2.Run in a custom thread pool:
+            #with concurrent.futures.ThreadPoolExecutor() as pool:
+            #    result = await loop.run_in_executor(pool,func1)
+            #    print('custom thread pool',result)
+            
+            #3.Run in as custom process pool:
+            #with concurrent.futures.ProcessPoolExecutor() as pool:
+            #   result = await loop.run_in_executor(pool,func1)
+            #   print('custom process pool',result)
+
+        asyncio.run(main())
+        ...
+        案例：asyncio + 不支持异步的模块
+        ...
+        import asyncio 
+        import requests 
+
+        async def download_image(url):
+            #发送网络请求，下载图片(遇到网络下载图片的IO请求,自动化切换到其他任务)
+            print('开始下载',url)
+
+            loop = asyncio.get_event_loop()
+            #requests模块默认不支持异步操作，所以就使用线程池来配合实现
+            future = loop.run_in_executor(None,requests.get,url)
+
+            response = await future 
+            print('下载完成')
+            #图片保存到本地
+            file_name = url.rsplit('/')[-1]
+            with open(file_name,'wb') as f:
+                f.write(response.content)
+        
+        if __name__ == '__main__':
+            url_list = [
+            'https://pic.qiushibaike.com/system/pictures/12436/124360753/medium/7TKGSDY0E3FBRC8Q.jpg',
+            'https://pic.qiushibaike.com/system/pictures/12437/124377444/medium/JBYNB7E71BC5NYRB.jpg',
+            'https://pic.qiushibaike.com/system/pictures/12437/124375149/medium/00EA4WHMKKPFHTJN.jpg'
+                ]
+            tasks = [download_image(url) for url in url_list]
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(async.wait(tasks))
+        -异步迭代器
+            -异步迭代器: 
+            实现了__aiter__()和__anext__()方法的对象。__next__必须返回一个awaitable对象。async for 会处理异步迭代器的__anext__()方法所返回的可等待对象，直到其引发一个StopAsyncIteration异常。由PEP 492引入
+            -异步可迭代对象:
+            可在async for 语句中被使用的对象。必须通过它的__aiter__()方法返回一个asynchronous iterator.由PEP 492引入
+
+        ...
+        import asyncio 
+
+        class Reader(object):
+            """自定义异步迭代器(同时也是异步可迭代对象)"""
+            def __init__(self):
+                self.count = 0
+            
+            async def readline(self):
+                #await asyncio.sleep(1)
+                self.count +=1
+                if self.count ==100:
+                    return None
+                return self.count
+            def __aiter__(self):
+                return self 
+            
+            async def __anext__(self):
+                val = await self.readline()
+                if val == None:
+                    raise StopAsyncIteration 
+                return val 
+        async def fun():
+            obj = Reader()
+            async for item in obj: #async for 必须写在协程函数内
+                print(item)
+        asyncio.run(func())
+        ...
+
+        -异步上下文管理器
+        此种对象通过定义__aenter__()和__aexit__()方法来对async with 语句中的环境进行控制。由PEP 492引入
+        import asyncio 
+
+        class AsyncContextManager:
+            def __init__(self):
+                self.conn = conn 
+            async def do_something(self):
+                #异步操作数据库
+                return 666 
+            async def __aenter__(self):
+                #异步链接数据库
+                self.conn = await asyncio.sleep(1)
+                return self 
+            
+            async def __aexit__(self,exc_type,exc,tb):
+                #异步关闭数据库链接
+                await asyncio.sleep(1)
+        async def func():
+            async with AsyncContextManager() as f: #也必须在协程函数内
+                result = f.do_something()
+                print(result)
+        asyncio.run(fun())      
+    - uvloop：
+        是asyncio的事件循环的替代方案。 事件循环>asyncio的事件循环
+    ...
+    import asyncio 
+    import uvloop 
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+    #编写asyncio的代码，与之前写的代码一致
+    #内部的事件循环自动化会变为uvloop
+    asyncio.run(...)
+    ...
+    注意: 一个asgi -> uvcorn 内部使用的就是uvloop 
+-总结:
+    最大的意义:通过一个线程利用其IO等待时间去做一些其他事情
