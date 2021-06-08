@@ -1,4 +1,4 @@
-# Scrapy settings for QiuBaiPro project
+# Scrapy settings for xiaohuaPro project
 #
 # For simplicity, this file contains only settings considered important or
 # commonly used. You can find more settings consulting the documentation:
@@ -7,18 +7,18 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = 'QiuBaiPro'
+BOT_NAME = 'xiaohuaPro'
 
-SPIDER_MODULES = ['QiuBaiPro.spiders']
-NEWSPIDER_MODULE = 'QiuBaiPro.spiders'
+SPIDER_MODULES = ['xiaohuaPro.spiders']
+NEWSPIDER_MODULE = 'xiaohuaPro.spiders'
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36'
+#USER_AGENT = 'xiaohuaPro (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
-LOG_LEVEL ='ERROR'
+LOG_LEVEL = 'ERROR'
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
 
@@ -45,13 +45,13 @@ LOG_LEVEL ='ERROR'
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 #SPIDER_MIDDLEWARES = {
-#    'QiuBaiPro.middlewares.QiubaiproSpiderMiddleware': 543,
+#    'xiaohuaPro.middlewares.XiaohuaproSpiderMiddleware': 543,
 #}
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #DOWNLOADER_MIDDLEWARES = {
-#    'QiuBaiPro.middlewares.QiubaiproDownloaderMiddleware': 543,
+#    'xiaohuaPro.middlewares.XiaohuaproDownloaderMiddleware': 543,
 #}
 
 # Enable or disable extensions
@@ -62,11 +62,9 @@ LOG_LEVEL ='ERROR'
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-ITEM_PIPELINES = {
-   'QiuBaiPro.pipelines.QiubaiproPipeline': 300,
-   'QiuBaiPro.pipelines.mysqlPileLine': 301,
-   #300表示的是优先级，数值越小优先级越高
-}
+#ITEM_PIPELINES = {
+#    'xiaohuaPro.pipelines.XiaohuaproPipeline': 300,
+#}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
