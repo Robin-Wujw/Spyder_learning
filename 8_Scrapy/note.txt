@@ -95,3 +95,69 @@ scrapy框架
     -全站数据爬取的方式
         - 基于Spider： 手动请求
         - 基于CrawlSpider: 全站数据爬取
+    -CrawlSpider的使用:
+        - 创建一个工程
+        - cd xxx
+        - 创建爬虫文件(CrawlSpider)：
+            - scrapy genspider -t crawl xxx www.xxx.com 
+            - 链接提取器：根据指定规则(allow)进行指定链接的提取
+            - 规则解析器: 将链接提取器提取到的链接进行指定规则(callback)的解析
+        -  需求:爬取sun网站中的编号，新闻标题，新闻内容，标号
+            - 分析:爬取的数据没有在同一张页面。
+            - 1.可以使用链接提取器提取所有的页码链接
+            - 2.让链接提取器提取所有新闻详情页的链接
+- 分布式爬虫
+    - 概念: 我们需要搭建一个分布式的集群，让其对一组资源进行分布联合爬取
+    - 作用：提升爬取数据的效率
+
+    - 如何实现分布式:
+        - 安装一个scrapy-redis的组件
+        - 原生的scrapy是不可以实现分布式爬虫的，必须要让scrapy结合着scrapy-redis组件一起实现分布式爬虫
+        - 为什么原生的scrapy不可以实现分布式
+            - 调度器不可以被分布式集群共享
+            - 管道不可以被分布式集群共享
+        - scrapy-redis组件作用
+            - 可以给原生的scrapy框架提供可以被共享的管道和调度器
+        - 实现流程
+            - 创建一个工程
+            - 创建一个基于CrawSpider的爬虫文件
+            - 修改当前的爬虫文件:
+                - 导包:from scrapy_redis.spiders import RedisCrawlSpider
+                - 将start_urls和allowd_domains进行注释
+                - 添加一个新属性: redis_key = 'sun'  可以被共享的调度器队列的名称
+                - 编写数据解析相关的操作
+                - 将当前爬虫类的父类改成RedisCrawlSpider
+            - 修改配置文件settings 
+                - 指定使用可以被共享的管道:
+                    #指定管道
+                    ITEM_PIPELINES = {
+                        'scrapy_redis.pipelines.RedisPipeline':400
+                    }
+                - 指定调度器:
+                    #增加了一个去重容器类的配置，作用使用Redis的set集合来存储请求的指纹数据，从而实现请求去重的持久化
+                    DUPEFILTER_CLASS = "scrapy_redis.dupefilter.RFPDupeFilter"
+                    #使用scrapy-redis组件自己的调度器
+                    SCHEDULER = "scrrapy_redis.scheduler.Scheduler"
+                    #配置调度器是否要持久化，也就是当爬虫结束了，要不要清空Redis中请求队列和去重指纹的set。如果是True就实现了只爬没有爬过的数据
+                    SCHEDULER_PERSIST = True
+                - 指定redis服务器:
+                    #指定redis
+                    REDIS_HOST = '127.0.0.1' #redis远程服务器的ip(修改)
+                    REDIS_PORT = 6379
+                - redis相关操作配置:
+                    - 配置redis的配置文件:
+                        - linux或者mac下: redis.conf
+                        - windows下: redis.windows.conf
+                        - 打开配置文件 修改:
+                            - 将 bind 127.0.0.1 进行删除或注释
+                            - 关闭保护模式: protected-mode yes改为no
+                    - 结合配置文件开启redis服务
+                        -sudo systemctl restart redis
+                    - 启动客户端
+                        - redis-cli
+                - 执行工程:
+                    - scrapy runspider xxx.py
+                - 向调度器的队列中放入一个起始url:
+                    - 调度器的队列在redis的客户端中
+                        - lpush xxx www.xxx.com
+                - 
